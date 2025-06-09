@@ -4,32 +4,33 @@ import c3d
 import pickle
 from sklearn.preprocessing import StandardScaler
 
-SELECTED_MARKERS = ['LANK', 'RANK', 'LKNE', 'RKNE', 'LASI', 'RASI','RSHO','LELB','RELB','LWRA','RWRA']  # Przykład: numery markerów kostek, zmień na swoje!
-MAX_FRAMES = 300
-FEATURES_PER_MARKER = 3 * len(SELECTED_MARKERS)
+SELECTED_ANGLES = ['LKneeAngles', 'RKneeAngles', 'LHipAngles', 'RHipAngles', 'LShoulderAngles', 'RShoulderAngles', "LElbowAngles", "RElbowAngles"]
+FEATURES_PER_ANGLE = 3 * len(SELECTED_ANGLES)
+MAX_FRAMES = 400
 
 def extract_sequence(path):
     with open(path, 'rb') as handle:
         reader = c3d.Reader(handle)
         labels = [label.strip() for label in reader.point_labels]
-        marker_indices = [i for i, label in enumerate(labels) if label in SELECTED_MARKERS]
-        if not marker_indices:
-            raise ValueError(f"Nie znaleziono markerów {SELECTED_MARKERS} w pliku {path}")
+        angle_indices = [i for i, label in enumerate(labels) if label in SELECTED_ANGLES]
+        if not angle_indices:
+            raise ValueError(f"Nie znaleziono kątów {SELECTED_ANGLES} w pliku {path}")
         sequence = []
         for _, points, _ in reader.read_frames():
             frame = []
-            for idx in marker_indices:
+            for idx in angle_indices:
                 frame.extend(points[idx, :3])
             sequence.append(frame)
     sequence = np.array(sequence)
     if sequence.shape[0] >= MAX_FRAMES:
         sequence = sequence[:MAX_FRAMES]
     else:
-        padding = np.zeros((MAX_FRAMES - sequence.shape[0], FEATURES_PER_MARKER))
+        padding = np.zeros((MAX_FRAMES - sequence.shape[0], FEATURES_PER_ANGLE))
         sequence = np.vstack((sequence, padding))
     return sequence
 
-def process_dataset(root_dir, output_file='data.pkl'):
+
+def process_dataset(root_dir, type, output_file='data.pkl'):
     X = []
     for subject in os.listdir(root_dir):
         subj_path = os.path.join(root_dir, subject)
@@ -37,7 +38,7 @@ def process_dataset(root_dir, output_file='data.pkl'):
             continue
         for session in os.listdir(subj_path):
             ses_path = os.path.join(subj_path, session)
-            for trial_type in ['Overground_Run']:
+            for trial_type in [type]:
                 trial_path = os.path.join(ses_path, trial_type)
                 if not os.path.exists(trial_path):
                     continue
@@ -55,11 +56,10 @@ def process_dataset(root_dir, output_file='data.pkl'):
                             except Exception as e:
                                 print(f"Błąd w {full_path}: {e}")
     X = np.array(X)
-    n_samples, n_frames, n_features = X.shape
-    X_flat = X.reshape(-1, n_features)
+    X_flat = X.reshape(-1, X.shape[-1])
     scaler = StandardScaler()
     X_flat = scaler.fit_transform(X_flat)
-    X = X_flat.reshape(n_samples, n_frames, n_features)
+    X = X_flat.reshape(X.shape[0], X.shape[1], X.shape[2])
     with open(output_file, 'wb') as f:
         pickle.dump(X, f)
     print(f"Zapisano dane do {output_file}")

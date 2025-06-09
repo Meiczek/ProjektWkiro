@@ -8,6 +8,7 @@ class MocapDataset(Dataset):
             self.X = pickle.load(f)
         self.X = torch.tensor(self.X, dtype=torch.float32)
     
+    
     def __len__(self):
         return len(self.X)
 
