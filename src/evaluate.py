@@ -42,9 +42,9 @@ plt.figure(figsize=(8,5))
 plt.hist(errors, bins=30, alpha=0.7)
 plt.xlabel("Błąd rekonstrukcji")
 plt.ylabel("Liczba sekwencji/okien")
-plt.title("Rozkład błędów rekonstrukcji (test)")
+plt.title("Rozkład błędów rekonstrukcji (zbiór treningowy)")
 plt.tight_layout()
-plt.savefig("reconstruction_error_histogram.png")
+plt.savefig("reconstruction_error_histogram - training.png")
 plt.close()
 
 # === (OPCJONALNIE) ANALIZA ANOMALII ===
